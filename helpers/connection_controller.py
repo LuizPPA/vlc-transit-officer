@@ -4,7 +4,7 @@ def bufsize():
     return 4096
 
 class ConnectionController:
-    host = '0.0.0.0'
+    host = '127.0.0.1'
     port = 8080
     clients = []
 
@@ -38,4 +38,4 @@ class ConnectionController:
 
     def broadcast(self, message):
         for client in self.clients:
-            client.connection.send(message)
+            client['connection'].send(message.encode('utf-8'))
