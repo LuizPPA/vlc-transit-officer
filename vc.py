@@ -7,14 +7,12 @@ import tkinter
 from tkinter import *
 import tkinter.filedialog
 
+from helpers.connection_controller import ConnectionController
 
 APP_NAME = 'VLC Transit Officer'
 CLIENT_WINDOW_NAME = 'Client'
 HOST_WINDOW_NAME = 'Host'
-SELECT_FILE_TITLE = 'Select video file'
-VIDEO_FILE_EXTENSIONS = (('Video files', '*.mp4'), ('Video files', '*.mov'), ('Video files', '*.mkv'))
 main_window = None
-
 
 def init_win_path():
     vlc_reg_key = winreg.OpenKey(
@@ -27,37 +25,35 @@ def init_win_path():
 
 def open_host_server():
     # TODO
+    cn = ConnectionController('25.4.28.237', 8080)
+    cn.serve(1)
+    message = input()
+    cn.broadcast(message)
+    print(cn)
+
     pass
 
-
 def open_file_prompt():
-    video_path = tkinter.filedialog.askopenfilename(initialdir="/", title=SELECT_FILE_TITLE, filetypes=VIDEO_FILE_EXTENSIONS)
-    video_name = video_path.split('/')[len(video_path.split('/'))-1]
-    return video_path, video_name
-
-
-def open_video_window(file_path):
-    player = vlc.MediaPlayer(file_path)
-    player.play()
-
+    # TODO
+    # root.withdraw()
+    # root.filename = tkinter.filedialog.askopenfilename(filetypes=(
+    #     ('Video files', '*.mp4'), ('Video files', '*.mov'), ('Video files', '*.mkv')))
+    return None
 
 def client_app():
     global main_window
     main_window.destroy()
+    host = input()
+    cn = ConnectionController(host, 8080)
+    server = cn.connect()
+    data = server.recv(4096)
+    print(data)
     client_window = tkinter.Tk()
     client_window.title(CLIENT_WINDOW_NAME)
     client_window.geometry('300x50')
     client_window.resizable(False, False)
 
-    video_path, video_name = open_file_prompt()
-
-    label_video_name = Label(client_window)
-    label_video_name.grid(row=0, column=0)
-
-    label_video_name.configure(text='File loaded: ' + video_name)
-    
-    
-    open_video_window(video_path)
+    video_path = open_file_prompt()
 
     client_window.mainloop()
 
@@ -69,20 +65,12 @@ def host_app():
     host_window.title(HOST_WINDOW_NAME)
     host_window.geometry('300x50')
     host_window.resizable(False, False)
-
-    video_path, video_name = open_file_prompt()
-
-    label_video_name = Label(host_window)
-    label_video_name.grid(row=0, column=0)
-
-    label_video_name.configure(text='Arquivo carregado: ' + video_name)
-
+    
+    video_path = open_file_prompt()
+    
     open_host_server()
 
-    open_video_window(video_path)
-
     host_window.mainloop()
-
 
 def main():
     init_win_path()
@@ -93,12 +81,13 @@ def main():
     main_window.geometry('300x50')
     main_window.resizable(False, False)
 
-    Button(main_window, text='Client', command=client_app).grid(column=0, row=0)
+    btn_client = Button(main_window, text='Client', command=client_app)
+    btn_client.grid(column=0, row=0)
 
-    Button(main_window, text='Host', command=host_app).grid(column=1, row=0)
+    btn_host = Button(main_window, text='Host', command=host_app)
+    btn_host.grid(column=1, row=0)
 
     main_window.mainloop()
-
 
 if __name__ == '__main__':
     main()
