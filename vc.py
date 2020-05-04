@@ -7,7 +7,9 @@ import tkinter
 from tkinter import *
 import tkinter.filedialog
 
-from helpers.connection_controller import ConnectionController
+from helpers.server import Server
+from helpers.client import Client
+from constants import BUFSIZE, DEFAULT_ADDR, DEFAULT_PORT
 
 APP_NAME = 'VLC Transit Officer'
 CLIENT_WINDOW_NAME = 'Client'
@@ -23,42 +25,42 @@ def init_win_path():
         sys.path.append(vlc_path)
 
 
-def open_host_server():
-    # TODO
-    cn = ConnectionController('25.4.28.237', 8080)
-    cn.serve(1)
-    message = input()
-    cn.broadcast(message)
-    print(cn)
+def open_host_server(peers = 1):
+    server = Server(DEFAULT_ADDR, DEFAULT_PORT)
+    server.serve(peers)
+    return server
 
-    pass
-
-def open_file_prompt():
-    # TODO
-    # root.withdraw()
-    # root.filename = tkinter.filedialog.askopenfilename(filetypes=(
-    #     ('Video files', '*.mp4'), ('Video files', '*.mov'), ('Video files', '*.mkv')))
-    return None
+def open_file_prompt(root):
+    root.filename = tkinter.filedialog.askopenfilename(filetypes=(
+        ('Video files', '*.mp4'), ('Video files', '*.mov'), ('Video files', '*.mkv'))
+    )
+    return root.filename
 
 def client_app():
+    #TODO: break method down into smaller chunks
     global main_window
     main_window.destroy()
-    host = input()
-    cn = ConnectionController(host, 8080)
-    server = cn.connect()
-    data = server.recv(4096)
-    print(data)
     client_window = tkinter.Tk()
     client_window.title(CLIENT_WINDOW_NAME)
     client_window.geometry('300x50')
     client_window.resizable(False, False)
+    video_path = open_file_prompt(client_window)
+    player = vlc.MediaPlayer(video_path)
+    host = input()
+    client = Client(host, DEFAULT_PORT)
+    server = client.connect()
 
-    video_path = open_file_prompt()
+    command = -1
+    while command != 0:
+        command = int(server.recv(BUFSIZE))
+        execute(player, command)
+    player.stop()
 
     client_window.mainloop()
 
 
 def host_app():
+    #TODO: break method down into smaller chunks
     global main_window
     main_window.destroy()
     host_window = tkinter.Tk()
@@ -66,11 +68,25 @@ def host_app():
     host_window.geometry('300x50')
     host_window.resizable(False, False)
     
-    video_path = open_file_prompt()
-    
-    open_host_server()
+    video_path = open_file_prompt(host_window)
+    player = vlc.MediaPlayer(video_path)
+    server = open_host_server()
+
+    command = -1
+    while command != 0:
+        command = int(input())
+        server.broadcast(str(command))
+        execute(player, command)
+    player.stop()
 
     host_window.mainloop()
+
+def execute(player, command):
+    if command == 1:
+        if player.is_playing():
+            player.pause()
+        else:
+            player.play()
 
 def main():
     init_win_path()
