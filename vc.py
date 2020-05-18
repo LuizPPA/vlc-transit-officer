@@ -46,7 +46,15 @@ def client_app():
     client_window.resizable(False, False)
     video_path = open_file_prompt(client_window)
     player = vlc.MediaPlayer(video_path)
-    host = input()
+    entry = Entry(client_window)
+    entry.pack()
+    entry.insert(0, DEFAULT_ADDR)
+    btn_connect = Button(client_window, text='Connect', command= lambda: connect_client(client_window, player, entry.get()))
+    btn_connect.pack()
+
+    client_window.mainloop()
+
+def connect_client(window, player, host = DEFAULT_ADDR):
     client = Client(host, DEFAULT_PORT)
     server = client.connect()
 
@@ -55,9 +63,6 @@ def client_app():
         command = int(server.recv(BUFSIZE))
         execute(player, command)
     player.stop()
-
-    client_window.mainloop()
-
 
 def host_app():
     #TODO: break method down into smaller chunks
