@@ -32,6 +32,11 @@ class Player(QtWidgets.QMainWindow):
         self.timer.timeout.connect(self.update_ui)
         self.timer.timeout.connect(self.update_time_label)
 
+        self.buffer_timer = QtCore.QTimer(self)
+        self.buffer_timer.setInterval(1.6)
+        self.buffer_timer.timeout.connect(self.consume_buffer)
+        self.buffer_timer.start()
+
     def create_ui(self):
         self.widget = QtWidgets.QWidget(self)
         self.setCentralWidget(self.widget)
@@ -136,8 +141,8 @@ class Player(QtWidgets.QMainWindow):
             self.mediaplayer.play()
             self.playbutton.setIcon(self.style().standardIcon(
                 QtWidgets.QStyle.SP_MediaPause))
-            self.timer.start()
             self.is_paused = False
+            self.timer.start()
 
     def stop(self):
         self.mediaplayer.stop()
@@ -191,6 +196,14 @@ class Player(QtWidgets.QMainWindow):
             self.mediaplayer.set_nsobject(int(self.videoframe.winId()))
 
         self.set_controls_available(True)
+
+    def consume_buffer(self):
+        while not self.buffer.empty():
+            command = self.buffer.get()
+            if command == 1:
+                self.play_pause()
+            elif command == 0:
+                self.stop()
 
     def update_ui(self):
         # Set the slider's position to its corresponding media position
