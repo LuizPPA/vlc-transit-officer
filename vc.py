@@ -6,9 +6,11 @@ import socket
 import tkinter
 from tkinter import *
 import tkinter.filedialog
+from PyQt5 import QtWidgets, QtGui, QtCore
 
 from helpers.server import Server
 from helpers.client import Client
+from Player import Player
 from constants import BUFSIZE, DEFAULT_ADDR, DEFAULT_PORT
 
 APP_NAME = 'VLC Transit Officer'
@@ -44,8 +46,13 @@ def client_app():
     client_window.title(CLIENT_WINDOW_NAME)
     client_window.geometry('300x50')
     client_window.resizable(False, False)
-    video_path = open_file_prompt(client_window)
-    player = vlc.MediaPlayer(video_path)
+    
+    player = Player()
+    player.show()
+    player.resize(1024, 768)
+    player.setWindowTitle('Client')
+    player.set_controls_available(False)
+
     entry = Entry(client_window)
     entry.pack()
     entry.insert(0, DEFAULT_ADDR)
@@ -73,8 +80,13 @@ def host_app():
     host_window.geometry('300x50')
     host_window.resizable(False, False)
     
-    video_path = open_file_prompt(host_window)
-    player = vlc.MediaPlayer(video_path)
+    player = Player()
+    player.show()
+    player.resize(1024, 768)
+    player.setWindowTitle('Host')
+    player.stop_callback = lambda: server.broadcast('0')
+    player.play_pause_callback = lambda: server.broadcast('1')
+    
     server = open_host_server()
 
     command = -1
@@ -95,6 +107,7 @@ def execute(player, command):
 
 def main():
     init_win_path()
+    app = QtWidgets.QApplication(sys.argv)
 
     global main_window
     main_window = tkinter.Tk()
