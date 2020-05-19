@@ -3,6 +3,7 @@ import sys
 import os
 import winreg
 import socket
+import _thread
 import tkinter
 from tkinter import *
 import tkinter.filedialog
@@ -65,11 +66,14 @@ def connect_client(window, player, host = DEFAULT_ADDR):
     client = Client(host, DEFAULT_PORT)
     server = client.connect()
 
+    _thread.start_new_thread(listen_to_host, (server, player))
+
+def listen_to_host(server, player):
     command = -1
     while command != 0:
         command = int(server.recv(BUFSIZE))
+        print(command)
         execute(player, command)
-    player.stop()
 
 def host_app():
     #TODO: break method down into smaller chunks
@@ -79,7 +83,7 @@ def host_app():
     host_window.title(HOST_WINDOW_NAME)
     host_window.geometry('300x50')
     host_window.resizable(False, False)
-    
+
     player = Player()
     player.show()
     player.resize(1024, 768)
@@ -89,21 +93,11 @@ def host_app():
     
     server = open_host_server()
 
-    command = -1
-    while command != 0:
-        command = int(input())
-        server.broadcast(str(command))
-        execute(player, command)
-    player.stop()
-
     host_window.mainloop()
+    
 
 def execute(player, command):
-    if command == 1:
-        if player.is_playing():
-            player.pause()
-        else:
-            player.play()
+    player.buffer.put(command)
 
 def main():
     init_win_path()
