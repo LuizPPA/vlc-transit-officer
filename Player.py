@@ -3,6 +3,7 @@ import queue
 import os
 import subprocess
 import sys
+import queue
 
 from PyQt5 import QtWidgets, QtGui, QtCore
 import vlc
@@ -10,17 +11,21 @@ import vlc
 
 class Player(QtWidgets.QMainWindow):
 
-    def __init__(self, master=None):
+    def __init__(self, title='Vlc Transit Officer', master=None):
         QtWidgets.QMainWindow.__init__(self, master)
-        self.setWindowTitle("Vlc Transit Officer")
+        self.setWindowTitle(title)
 
         self.instance = vlc.Instance()
         self.media = None
         self.mediaplayer = self.instance.media_player_new()
+        self.buffer = queue.Queue()
 
         self.create_ui()
         self.is_paused = False
         self.is_mute = False
+
+        self.play_pause_callback = lambda: None
+        self.stop_callback = lambda: None
 
         self.timer = QtCore.QTimer(self)
         self.timer.setInterval(100)
@@ -119,6 +124,8 @@ class Player(QtWidgets.QMainWindow):
         self.timer.start()
 
     def play_pause(self):
+        if self.play_pause_callback:
+            self.play_pause_callback()
         if self.mediaplayer.is_playing():
             self.mediaplayer.pause()
             self.playbutton.setIcon(self.style().standardIcon(
@@ -144,6 +151,8 @@ class Player(QtWidgets.QMainWindow):
         # Reset the media position slider
         self.positionslider.setValue(0)
         self.timer.stop()
+        if self.stop_callback:
+            self.stop_callback()
 
     def mute(self):
         if self.is_mute:
