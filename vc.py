@@ -30,8 +30,11 @@ def init_win_path():
 
 def open_host_server(peers = 1):
     server = Server(DEFAULT_ADDR, DEFAULT_PORT)
-    server.serve(peers)
+    _thread.start_new_thread(manage_host_connections, (server, peers))
     return server
+
+def manage_host_connections(server, peers):
+    server.serve(peers)
 
 def open_file_prompt(root):
     root.filename = tkinter.filedialog.askopenfilename(filetypes=(

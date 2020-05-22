@@ -20,9 +20,6 @@ class Server(ConnectionController):
                 print('Serving to ', client)
             except socket.timeout:
                 print('Could not connect to all peers')
-                return self.clients
-
-        return self.clients
 
     def broadcast(self, message):
         for client in self.clients:
