@@ -74,7 +74,7 @@ def connect_client(window, player, host = DEFAULT_ADDR):
 def listen_to_host(server, player):
     command = -1
     while command != 0:
-        command = int(server.recv(BUFSIZE))
+        command = server.recv(BUFSIZE)
         print(command)
         execute(player, command)
 
@@ -93,6 +93,7 @@ def host_app():
     player.setWindowTitle('Host')
     player.stop_callback = lambda: server.broadcast('0')
     player.play_pause_callback = lambda: server.broadcast('1')
+    player.set_position_callback = lambda: server.broadcast('2-' + str(player.positionslider.value()))
     
     server = open_host_server()
 

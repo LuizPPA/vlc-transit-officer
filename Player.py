@@ -26,6 +26,7 @@ class Player(QtWidgets.QMainWindow):
 
         self.play_pause_callback = lambda: None
         self.stop_callback = lambda: None
+        self.set_position_callback = lambda: None
 
         self.timer = QtCore.QTimer(self)
         self.timer.setInterval(100)
@@ -127,6 +128,21 @@ class Player(QtWidgets.QMainWindow):
 
         self.mediaplayer.set_position(pos * .001)
         self.timer.start()
+        self.set_position_callback()
+
+    def set_position_i(self, pos):
+        # Set the media position to where the slider was dragged
+        self.timer.stop()
+
+        if pos >= 0:
+            current_time = self.mediaplayer.get_time()
+
+            if current_time == -1:
+                self.timer.start()
+                return
+
+        self.mediaplayer.set_position(pos * .001)
+        self.timer.start()
 
     def play_pause(self):
         if self.play_pause_callback:
@@ -199,11 +215,15 @@ class Player(QtWidgets.QMainWindow):
 
     def consume_buffer(self):
         while not self.buffer.empty():
-            command = self.buffer.get()
-            if command == 1:
+            command = self.buffer.get().decode('utf-8')
+            print(command)
+            if command == '1':
                 self.play_pause()
-            elif command == 0:
+            elif command == '0':
                 self.stop()
+            elif command[0] == '2':
+                pos = int(command[2:])
+                self.set_position_i(pos)
 
     def update_ui(self):
         # Set the slider's position to its corresponding media position
