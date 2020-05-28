@@ -251,6 +251,13 @@ class Player(QtWidgets.QMainWindow):
         self.stopbutton.setEnabled(state)
         self.mutebutton.setEnabled(state)
 
+    def stringify_slider_position(self):
+        string_position = str(self.positionslider.value())
+        last_index = string_position.rfind('-')
+        if last_index == -1: last_index = 0
+        string_last_position = string_position[last_index:]
+        return string_last_position
+
 
 def main():
     app = QtWidgets.QApplication(sys.argv)

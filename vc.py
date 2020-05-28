@@ -3,7 +3,7 @@ import sys
 import os
 import winreg
 import socket
-import _thread
+import _thread as thread
 import tkinter
 from tkinter import *
 import tkinter.filedialog
@@ -30,7 +30,7 @@ def init_win_path():
 
 def open_host_server(peers = 1):
     server = Server(DEFAULT_ADDR, DEFAULT_PORT)
-    _thread.start_new_thread(manage_host_connections, (server, peers))
+    thread.start_new_thread(manage_host_connections, (server, peers))
     return server
 
 def manage_host_connections(server, peers):
@@ -43,7 +43,6 @@ def open_file_prompt(root):
     return root.filename
 
 def client_app():
-    #TODO: break method down into smaller chunks
     global main_window
     main_window.destroy()
     client_window = tkinter.Tk()
@@ -51,25 +50,20 @@ def client_app():
     client_window.geometry('300x50')
     client_window.resizable(False, False)
     
-    player = Player()
+    client = Client(DEFAULT_ADDR, DEFAULT_PORT)
+    player = client.create_player()
     player.show()
-    player.resize(1024, 768)
-    player.setWindowTitle('Client')
-    player.set_controls_available(False)
 
     entry = Entry(client_window)
     entry.pack()
-    entry.insert(0, DEFAULT_ADDR)
-    btn_connect = Button(client_window, text='Connect', command= lambda: connect_client(client_window, player, entry.get()))
+    btn_connect = Button(client_window, text='Connect', command= lambda: connect_client(client, player, entry.get()))
     btn_connect.pack()
 
     client_window.mainloop()
 
-def connect_client(window, player, host = DEFAULT_ADDR):
-    client = Client(host, DEFAULT_PORT)
-    server = client.connect()
-
-    _thread.start_new_thread(listen_to_host, (server, player))
+def connect_client(client, player, host = DEFAULT_ADDR):
+    server = client.connect(host)
+    thread.start_new_thread(listen_to_host, (server, player))
 
 def listen_to_host(server, player):
     command = -1
@@ -79,23 +73,17 @@ def listen_to_host(server, player):
         execute(player, command)
 
 def host_app():
-    #TODO: break method down into smaller chunks
     global main_window
     main_window.destroy()
     host_window = tkinter.Tk()
     host_window.title(HOST_WINDOW_NAME)
     host_window.geometry('300x50')
     host_window.resizable(False, False)
-
-    player = Player()
-    player.show()
-    player.resize(1024, 768)
-    player.setWindowTitle('Host')
-    player.stop_callback = lambda: server.broadcast('0')
-    player.play_pause_callback = lambda: server.broadcast('1')
-    player.set_position_callback = lambda: server.broadcast('2-' + str(player.positionslider.value()))
     
     server = open_host_server()
+
+    player = server.create_player()
+    player.show()
 
     host_window.mainloop()
     
@@ -120,6 +108,7 @@ def main():
     btn_host.grid(column=1, row=0)
 
     main_window.mainloop()
+    sys.exit(app.exec_())
 
 if __name__ == '__main__':
     main()
