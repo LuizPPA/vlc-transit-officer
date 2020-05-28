@@ -69,7 +69,6 @@ def listen_to_host(server, player):
     command = -1
     while command != 0:
         command = server.recv(BUFSIZE)
-        print(command)
         execute(player, command)
 
 def host_app():

@@ -104,10 +104,7 @@ class Player(QtWidgets.QMainWindow):
 
         menu_bar = self.menuBar()
 
-        # File menu
         file_menu = menu_bar.addMenu("File")
-
-        # Create actions to load a new media file
         open_action = QtWidgets.QAction("Load Video", self)
         file_menu.addAction(open_action)
         open_action.triggered.connect(self.open_file)
@@ -115,7 +112,6 @@ class Player(QtWidgets.QMainWindow):
         self.set_controls_available(False)
 
     def set_position(self):
-        # Set the media position to where the slider was dragged
         self.timer.stop()
         pos = self.positionslider.value()
 
@@ -131,7 +127,6 @@ class Player(QtWidgets.QMainWindow):
         self.set_position_callback()
 
     def set_position_i(self, pos):
-        # Set the media position to where the slider was dragged
         self.timer.stop()
 
         if pos >= 0:
@@ -169,7 +164,6 @@ class Player(QtWidgets.QMainWindow):
         time = QtCore.QTime(0, 0, 0, 0)
         self.timelabel.setText(time.toString())
 
-        # Reset the media position slider
         self.positionslider.setValue(0)
         self.timer.stop()
         if self.stop_callback:
@@ -192,16 +186,12 @@ class Player(QtWidgets.QMainWindow):
         if not filename[0]:
             return
 
-        # getOpenFileName returns a tuple, so use only the actual file name
         self.media = self.instance.media_new(filename[0])
 
-        # Put the media in the media player
         self.mediaplayer.set_media(self.media)
 
-        # Parse the metadata of the file
         self.media.parse()
 
-        # Set the title of the track as window title
         self.setWindowTitle("Playing: {}".format(self.media.get_meta(0)))
 
         if platform.system() == "Linux":  # for Linux using the X Server
@@ -221,23 +211,17 @@ class Player(QtWidgets.QMainWindow):
                 self.play_pause()
             elif command == '0':
                 self.stop()
-            elif command[0] == '2':
+            elif command[0:2] == '2-':
                 pos = int(command[2:])
                 self.set_position_i(pos)
 
     def update_ui(self):
-        # Set the slider's position to its corresponding media position
-        # Note that the setValue function only takes values of type int,
-        # so we must first convert the corresponding media position.
         media_pos = int(self.mediaplayer.get_position() * 1000)
         self.positionslider.setValue(media_pos)
 
-        # No need to call this function if nothing is played
         if not self.mediaplayer.is_playing():
             self.timer.stop()
 
-            # After the video finished, the play button stills shows "Pause",
-            # which is not the desired behavior of a media player.
             if not self.is_paused:
                 self.stop()
 
