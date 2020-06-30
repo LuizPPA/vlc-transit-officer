@@ -3,6 +3,7 @@ import queue
 import os
 import subprocess
 import sys
+import queue
 
 from PyQt5 import QtWidgets, QtGui, QtCore
 import vlc
@@ -10,22 +11,32 @@ import vlc
 
 class Player(QtWidgets.QMainWindow):
 
-    def __init__(self, master=None):
+    def __init__(self, title='Vlc Transit Officer', master=None):
         QtWidgets.QMainWindow.__init__(self, master)
-        self.setWindowTitle("Vlc Transit Officer")
+        self.setWindowTitle(title)
 
         self.instance = vlc.Instance()
         self.media = None
         self.mediaplayer = self.instance.media_player_new()
+        self.buffer = queue.Queue()
 
         self.create_ui()
         self.is_paused = False
         self.is_mute = False
 
+        self.play_pause_callback = lambda: None
+        self.stop_callback = lambda: None
+        self.set_position_callback = lambda: None
+
         self.timer = QtCore.QTimer(self)
         self.timer.setInterval(100)
         self.timer.timeout.connect(self.update_ui)
         self.timer.timeout.connect(self.update_time_label)
+
+        self.buffer_timer = QtCore.QTimer(self)
+        self.buffer_timer.setInterval(1.6)
+        self.buffer_timer.timeout.connect(self.consume_buffer)
+        self.buffer_timer.start()
 
     def create_ui(self):
         self.widget = QtWidgets.QWidget(self)
@@ -93,10 +104,7 @@ class Player(QtWidgets.QMainWindow):
 
         menu_bar = self.menuBar()
 
-        # File menu
         file_menu = menu_bar.addMenu("File")
-
-        # Create actions to load a new media file
         open_action = QtWidgets.QAction("Load Video", self)
         file_menu.addAction(open_action)
         open_action.triggered.connect(self.open_file)
@@ -104,7 +112,6 @@ class Player(QtWidgets.QMainWindow):
         self.set_controls_available(False)
 
     def set_position(self):
-        # Set the media position to where the slider was dragged
         self.timer.stop()
         pos = self.positionslider.value()
 
@@ -117,8 +124,24 @@ class Player(QtWidgets.QMainWindow):
 
         self.mediaplayer.set_position(pos * .001)
         self.timer.start()
+        self.set_position_callback()
+
+    def set_position_i(self, pos):
+        self.timer.stop()
+
+        if pos >= 0:
+            current_time = self.mediaplayer.get_time()
+
+            if current_time == -1:
+                self.timer.start()
+                return
+
+        self.mediaplayer.set_position(pos * .001)
+        self.timer.start()
 
     def play_pause(self):
+        if self.play_pause_callback:
+            self.play_pause_callback()
         if self.mediaplayer.is_playing():
             self.mediaplayer.pause()
             self.playbutton.setIcon(self.style().standardIcon(
@@ -129,8 +152,8 @@ class Player(QtWidgets.QMainWindow):
             self.mediaplayer.play()
             self.playbutton.setIcon(self.style().standardIcon(
                 QtWidgets.QStyle.SP_MediaPause))
-            self.timer.start()
             self.is_paused = False
+            self.timer.start()
 
     def stop(self):
         self.mediaplayer.stop()
@@ -141,9 +164,10 @@ class Player(QtWidgets.QMainWindow):
         time = QtCore.QTime(0, 0, 0, 0)
         self.timelabel.setText(time.toString())
 
-        # Reset the media position slider
         self.positionslider.setValue(0)
         self.timer.stop()
+        if self.stop_callback:
+            self.stop_callback()
 
     def mute(self):
         if self.is_mute:
@@ -162,16 +186,12 @@ class Player(QtWidgets.QMainWindow):
         if not filename[0]:
             return
 
-        # getOpenFileName returns a tuple, so use only the actual file name
         self.media = self.instance.media_new(filename[0])
 
-        # Put the media in the media player
         self.mediaplayer.set_media(self.media)
 
-        # Parse the metadata of the file
         self.media.parse()
 
-        # Set the title of the track as window title
         self.setWindowTitle("Playing: {}".format(self.media.get_meta(0)))
 
         if platform.system() == "Linux":  # for Linux using the X Server
@@ -183,19 +203,25 @@ class Player(QtWidgets.QMainWindow):
 
         self.set_controls_available(True)
 
+    def consume_buffer(self):
+        while not self.buffer.empty():
+            command = self.buffer.get().decode('utf-8')
+            print(command)
+            if command == '1':
+                self.play_pause()
+            elif command == '0':
+                self.stop()
+            elif command[0:2] == '2-':
+                pos = int(command[2:])
+                self.set_position_i(pos)
+
     def update_ui(self):
-        # Set the slider's position to its corresponding media position
-        # Note that the setValue function only takes values of type int,
-        # so we must first convert the corresponding media position.
         media_pos = int(self.mediaplayer.get_position() * 1000)
         self.positionslider.setValue(media_pos)
 
-        # No need to call this function if nothing is played
         if not self.mediaplayer.is_playing():
             self.timer.stop()
 
-            # After the video finished, the play button stills shows "Pause",
-            # which is not the desired behavior of a media player.
             if not self.is_paused:
                 self.stop()
 
@@ -208,6 +234,13 @@ class Player(QtWidgets.QMainWindow):
         self.playbutton.setEnabled(state)
         self.stopbutton.setEnabled(state)
         self.mutebutton.setEnabled(state)
+
+    def stringify_slider_position(self):
+        string_position = str(self.positionslider.value())
+        last_index = string_position.rfind('-')
+        if last_index == -1: last_index = 0
+        string_last_position = string_position[last_index:]
+        return string_last_position
 
 
 def main():

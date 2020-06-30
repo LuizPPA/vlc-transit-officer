@@ -3,12 +3,15 @@ import sys
 import os
 import winreg
 import socket
+import _thread as thread
 import tkinter
 from tkinter import *
 import tkinter.filedialog
+from PyQt5 import QtWidgets, QtGui, QtCore
 
 from helpers.server import Server
 from helpers.client import Client
+from Player import Player
 from constants import BUFSIZE, DEFAULT_ADDR, DEFAULT_PORT
 
 APP_NAME = 'VLC Transit Officer'
@@ -27,8 +30,11 @@ def init_win_path():
 
 def open_host_server(peers = 1):
     server = Server(DEFAULT_ADDR, DEFAULT_PORT)
-    server.serve(peers)
+    thread.start_new_thread(manage_host_connections, (server, peers))
     return server
+
+def manage_host_connections(server, peers):
+    server.serve(peers)
 
 def open_file_prompt(root):
     root.filename = tkinter.filedialog.askopenfilename(filetypes=(
@@ -37,35 +43,35 @@ def open_file_prompt(root):
     return root.filename
 
 def client_app():
-    #TODO: break method down into smaller chunks
     global main_window
     main_window.destroy()
     client_window = tkinter.Tk()
     client_window.title(CLIENT_WINDOW_NAME)
     client_window.geometry('300x50')
     client_window.resizable(False, False)
-    video_path = open_file_prompt(client_window)
-    player = vlc.MediaPlayer(video_path)
+    
+    client = Client(DEFAULT_ADDR, DEFAULT_PORT)
+    player = client.create_player()
+    player.show()
+
     entry = Entry(client_window)
     entry.pack()
-    entry.insert(0, DEFAULT_ADDR)
-    btn_connect = Button(client_window, text='Connect', command= lambda: connect_client(client_window, player, entry.get()))
+    btn_connect = Button(client_window, text='Connect', command= lambda: connect_client(client, player, entry.get()))
     btn_connect.pack()
 
     client_window.mainloop()
 
-def connect_client(window, player, host = DEFAULT_ADDR):
-    client = Client(host, DEFAULT_PORT)
-    server = client.connect()
+def connect_client(client, player, host = DEFAULT_ADDR):
+    server = client.connect(host)
+    thread.start_new_thread(listen_to_host, (server, player))
 
+def listen_to_host(server, player):
     command = -1
     while command != 0:
-        command = int(server.recv(BUFSIZE))
+        command = server.recv(BUFSIZE)
         execute(player, command)
-    player.stop()
 
 def host_app():
-    #TODO: break method down into smaller chunks
     global main_window
     main_window.destroy()
     host_window = tkinter.Tk()
@@ -73,28 +79,20 @@ def host_app():
     host_window.geometry('300x50')
     host_window.resizable(False, False)
     
-    video_path = open_file_prompt(host_window)
-    player = vlc.MediaPlayer(video_path)
     server = open_host_server()
 
-    command = -1
-    while command != 0:
-        command = int(input())
-        server.broadcast(str(command))
-        execute(player, command)
-    player.stop()
+    player = server.create_player()
+    player.show()
 
     host_window.mainloop()
+    
 
 def execute(player, command):
-    if command == 1:
-        if player.is_playing():
-            player.pause()
-        else:
-            player.play()
+    player.buffer.put(command)
 
 def main():
     init_win_path()
+    app = QtWidgets.QApplication(sys.argv)
 
     global main_window
     main_window = tkinter.Tk()
@@ -109,6 +107,7 @@ def main():
     btn_host.grid(column=1, row=0)
 
     main_window.mainloop()
+    sys.exit(app.exec_())
 
 if __name__ == '__main__':
     main()
