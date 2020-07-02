@@ -18,7 +18,7 @@ class PlayerV2(QMainWindow):
     def __init__(self):
         super().__init__()
         self.__init_ui()
-        self.media_player_controller = MediaPlayerController()
+        self.media_player_controller = MediaPlayerController(self)
 
     def __init_ui(self):
         self.setWindowTitle(self.WINDOW_TITLE)
@@ -54,6 +54,8 @@ class PlayerV2(QMainWindow):
         self.media_player.setVideoOutput(self.video_widget)
 
         self.play_pause_button = QPushButton('Play/Pause')
+        self.play_pause_button.clicked.connect(self.play_pause)
+
         self.stop_button = QPushButton('Stop')
         self.mute_unmute_button = QPushButton('Mute/Unmute')
         self.video_time_counter = QSlider(Qt.Horizontal)
@@ -89,6 +91,12 @@ class PlayerV2(QMainWindow):
 
     def open_video(self):
         self.media_player_controller.open_video(self, self.media_player)
+
+    def enable_play_pause_callback(self, is_enabled):
+        self.play_pause_button.setEnabled(is_enabled)
+
+    def play_pause(self):
+        self.media_player_controller.play_pause_video(self.media_player)
 
     def host_party(self):
         print('Host Party')
