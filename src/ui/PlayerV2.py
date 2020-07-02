@@ -1,23 +1,24 @@
-from PyQt5.QtCore import Qt, QUrl
+from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPalette
 from PyQt5.QtMultimediaWidgets import QVideoWidget
-from PyQt5.QtWidgets import QApplication, QWidget, QDesktopWidget, QVBoxLayout, QHBoxLayout, QPushButton, QFrame, \
-    QSlider, QAction, QMenu, QMainWindow, QFileDialog
-from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
+from PyQt5.QtWidgets import QApplication, QDesktopWidget, QVBoxLayout, QHBoxLayout, QPushButton, QFrame, \
+    QSlider, QAction, QMainWindow
+from PyQt5.QtMultimedia import QMediaPlayer
 import sys
 
-
 # NECESSÁRIO INSTALAR CODEC K LITE
+from src.ui.MediaPlayerController import MediaPlayerController
+
 
 class PlayerV2(QMainWindow):
     WINDOW_TITLE = 'Player V2'
     INITIAL_WIDTH = 1200
     INITIAL_HEIGHT = 900
-    INITIAL_HEIGHT = 900
 
     def __init__(self):
         super().__init__()
         self.__init_ui()
+        self.media_player_controller = MediaPlayerController()
 
     def __init_ui(self):
         self.setWindowTitle(self.WINDOW_TITLE)
@@ -87,11 +88,7 @@ class PlayerV2(QMainWindow):
         self.move(qr.topLeft())
 
     def open_video(self):
-        video_path, _ = QFileDialog.getOpenFileName(self, "Open Video", "~", "Video Files (*.mp4 *.mkv)")
-
-        if video_path != '':
-            url = QUrl.fromLocalFile(video_path)
-            self.media_player.setMedia(QMediaContent(url))
+        self.media_player_controller.open_video(self, self.media_player)
 
     def host_party(self):
         print('Host Party')
@@ -104,9 +101,9 @@ def main():
     app = QApplication(sys.argv)
     player = PlayerV2()
 
-    #player.media_player.setMedia(
+    # player.media_player.setMedia(
     #    QMediaContent(QUrl.fromLocalFile(r'C:/Users/raulf/Desktop/vlc-transit-officer/samples/what_is_love.mp4')))
-    #player.media_player.play()
+    # player.media_player.play()
 
     sys.exit(app.exec_())
 
