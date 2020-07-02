@@ -1,16 +1,20 @@
-from PyQt5.QtCore import Qt, QRect
+from PyQt5.QtCore import Qt, QUrl
 from PyQt5.QtGui import QPalette
 from PyQt5.QtMultimediaWidgets import QVideoWidget
 from PyQt5.QtWidgets import QApplication, QWidget, QDesktopWidget, QVBoxLayout, QHBoxLayout, QPushButton, QFrame, \
     QSlider
-from PyQt5.QtMultimedia import QMediaPlayer
+from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 import sys
 
+
+# NECESSÁRIO INSTALAR CODEC K LITE
 
 class PlayerV2(QWidget):
     WINDOW_TITLE = 'Player V2'
     INITIAL_WIDTH = 1200
     INITIAL_HEIGHT = 900
+    INITIAL_HEIGHT = 900
+
 
     def __init__(self):
         super().__init__()
@@ -23,14 +27,14 @@ class PlayerV2(QWidget):
         self.show()
 
     def __init_ui_components(self):
-        self.media_player = QMediaPlayer(None, QMediaPlayer.VideoSurface)
         self.video_widget = QVideoWidget()
         video_palette = self.palette()
         video_palette.setColor(QPalette.Background, Qt.black)
-
         self.video_widget.setAutoFillBackground(True)
         self.video_widget.setPalette(video_palette)
-        self.video_widget.show()
+
+        self.media_player = QMediaPlayer(None, QMediaPlayer.VideoSurface)
+        self.media_player.setVideoOutput(self.video_widget)
 
         self.play_pause_button = QPushButton('Play/Pause')
         self.stop_button = QPushButton('Stop')
@@ -46,7 +50,7 @@ class PlayerV2(QWidget):
         self.controls_bar.addWidget(self.video_time_counter)
 
         self.controls_bar_container = QFrame()
-        self.controls_bar_container.setMaximumHeight(50)
+        self.controls_bar_container.setMaximumHeight(self.CONTROL_BAR)
         self.controls_bar_container.setLayout(self.controls_bar)
 
         self.vertical_layout = QVBoxLayout()
@@ -63,10 +67,14 @@ class PlayerV2(QWidget):
         self.move(qr.topLeft())
 
 
-
 def main():
     app = QApplication(sys.argv)
     player = PlayerV2()
+
+    # player.media_player.setMedia(
+    #    QMediaContent(QUrl.fromLocalFile(r'C:/Users/raulf/Desktop/vlc-transit-officer/samples/what_is_love.mp4')))
+    # player.media_player.play()
+
     sys.exit(app.exec_())
 
 
