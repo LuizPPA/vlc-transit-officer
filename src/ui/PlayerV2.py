@@ -2,7 +2,7 @@ from PyQt5.QtCore import Qt, QUrl
 from PyQt5.QtGui import QPalette
 from PyQt5.QtMultimediaWidgets import QVideoWidget
 from PyQt5.QtWidgets import QApplication, QWidget, QDesktopWidget, QVBoxLayout, QHBoxLayout, QPushButton, QFrame, \
-    QSlider, QAction, QMenu, QMainWindow
+    QSlider, QAction, QMenu, QMainWindow, QFileDialog
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 import sys
 
@@ -87,7 +87,11 @@ class PlayerV2(QMainWindow):
         self.move(qr.topLeft())
 
     def open_video(self):
-        print('Open Video')
+        video_path, _ = QFileDialog.getOpenFileName(self, "Open Video", "~", "Video Files (*.mp4 *.mkv)")
+
+        if video_path != '':
+            url = QUrl.fromLocalFile(video_path)
+            self.media_player.setMedia(QMediaContent(url))
 
     def host_party(self):
         print('Host Party')
@@ -100,9 +104,9 @@ def main():
     app = QApplication(sys.argv)
     player = PlayerV2()
 
-    player.media_player.setMedia(
-        QMediaContent(QUrl.fromLocalFile(r'C:/Users/raulf/Desktop/vlc-transit-officer/samples/what_is_love.mp4')))
-    player.media_player.play()
+    #player.media_player.setMedia(
+    #    QMediaContent(QUrl.fromLocalFile(r'C:/Users/raulf/Desktop/vlc-transit-officer/samples/what_is_love.mp4')))
+    #player.media_player.play()
 
     sys.exit(app.exec_())
 
