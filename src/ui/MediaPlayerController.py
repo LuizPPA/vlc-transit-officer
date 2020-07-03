@@ -13,6 +13,7 @@ class MediaPlayerController:
         self.is_allowed_to_play_pause = False
         self.is_allowed_to_stop = False
         self.is_playing = False
+        self.is_muted = False
         self.enable_play_pause(False)
         self.enable_stop(False)
 
@@ -47,3 +48,7 @@ class MediaPlayerController:
             media_player.stop()
             self.is_playing = False
             self.enable_stop(False)
+
+    def mute_unmute_video(self, media_player):
+        self.is_muted = not self.is_muted
+        media_player.setMuted(self.is_muted)

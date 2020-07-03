@@ -60,6 +60,8 @@ class PlayerV2(QMainWindow):
         self.stop_button.clicked.connect(self.stop)
 
         self.mute_unmute_button = QPushButton('Mute/Unmute')
+        self.mute_unmute_button.clicked.connect(self.mute_unmute)
+
         self.video_time_counter = QSlider(Qt.Horizontal)
 
         self.controls_bar = QHBoxLayout()
@@ -105,6 +107,9 @@ class PlayerV2(QMainWindow):
 
     def stop(self):
         self.media_player_controller.stop_video(self.media_player)
+
+    def mute_unmute(self):
+        self.media_player_controller.mute_unmute_video(self.media_player)
 
     def host_party(self):
         print('Host Party')
